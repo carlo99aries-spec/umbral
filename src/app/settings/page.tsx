@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { loadProfile } from "@/lib/profile";
 import { resolveTier } from "@/lib/reputation";
 import { TokenForm } from "@/components/TokenForm";
+import { ProfileForm } from "@/components/ProfileForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { TierBadge } from "@/components/TierBadge";
 import { timeAgo } from "@/lib/format";
@@ -73,6 +74,20 @@ export default async function SettingsPage() {
           </Link>
           <LogoutButton />
         </div>
+      </section>
+
+      <section className="panel p-5">
+        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
+          Tu perfil
+        </h2>
+        <p className="mb-3 mt-1.5 text-xs leading-relaxed text-[#6b6480]">
+          Cómo te ven los demás. El usuario y el correo no se cambian desde aquí.
+        </p>
+        <ProfileForm
+          displayName={user.displayName}
+          bio={user.bio}
+          avatarHue={user.avatarHue}
+        />
       </section>
 
       <section className="panel p-5">

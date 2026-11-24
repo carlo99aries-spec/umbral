@@ -70,13 +70,25 @@ try {
   check("el perfil sigue cargando tras recibir aura", !/Application error/i.test(afterHtml));
   check("el aura se movió a 4.0", afterHtml.includes("4.0") && afterHtml.includes("1 votos"));
 
-  // 4. QR endpoint on the real domain.
+  // 5. Profile editing: name, bio and avatar hue are owned by the user.
+  await a.page.goto(`${BASE}/settings`, { waitUntil: "domcontentloaded" });
+  await a.page.fill('input[name="displayName"]', "Prod QA Editado");
+  await a.page.fill('textarea[name="bio"]', "Bio verificada en producción");
+  await a.page.click('button:has-text("Guardar cambios")');
+  check("guardar el perfil confirma el cambio", await a.page.getByText("Perfil actualizado").isVisible());
+
+  await a.page.goto(`${BASE}/u/${A.handle}`, { waitUntil: "domcontentloaded" });
+  const editedHtml = await a.page.content();
+  check("el nombre nuevo se ve en el perfil", editedHtml.includes("Prod QA Editado"));
+  check("la bio nueva se ve en el perfil", editedHtml.includes("Bio verificada en producción"));
+
+  // 6. QR endpoint on the real domain.
   const qr = await a.page.request.get(
     `${BASE}/api/qr?data=${encodeURIComponent(`${BASE}/rate/abc123`)}`,
   );
   check("el endpoint QR sirve PNG", qr.ok() && (qr.headers()["content-type"] ?? "").includes("image/png"));
 
-  // 5. Public API contract.
+  // 7. Public API contract.
   const api = await a.page.request.get(`${BASE}/api/v1/score/${A.handle}`);
   const body = api.ok() ? await api.json() : null;
   check("la API pública responde 200", api.ok());

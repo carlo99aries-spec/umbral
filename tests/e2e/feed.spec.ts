@@ -41,7 +41,10 @@ test.describe("Feed: publicar y calificar publicaciones", () => {
     browser,
   }) => {
     const u = await newUser(browser, "xss");
-    const payload = "<b>no soy negrita</b>";
+    // Unique per run: the feed keeps earlier posts and this caption must select
+    // exactly one card, not every copy from previous runs.
+    const marker = `no soy negrita ${Date.now()}`;
+    const payload = `<b>${marker}</b>`;
     let dialogOpened = false;
     u.page.on("dialog", async (d) => {
       dialogOpened = true;
@@ -50,7 +53,7 @@ test.describe("Feed: publicar y calificar publicaciones", () => {
 
     await publishPost(u.page, payload);
 
-    const card = u.page.locator("article", { hasText: "no soy negrita" });
+    const card = u.page.locator("article", { hasText: marker });
     await expect(card).toHaveCount(1);
     await expect(card.locator("b")).toHaveCount(0);
     expect(dialogOpened).toBe(false);

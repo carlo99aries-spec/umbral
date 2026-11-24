@@ -72,6 +72,63 @@ export async function signupAction(_prev: ActionState, formData: FormData): Prom
   redirect(`/u/${user.handle}`);
 }
 
+const profileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .max(48, "El nombre no puede pasar de 48 caracteres"),
+  bio: z
+    .string()
+    .trim()
+    .max(280, "La bio no puede pasar de 280 caracteres")
+    .default(""),
+  avatarHue: z.coerce
+    .number()
+    .int("Color inválido")
+    .min(0, "Color inválido")
+    .max(359, "Color inválido"),
+});
+
+/**
+ * Update the fields a person owns about themselves. Handle and email are
+ * deliberately not editable here: the handle is the public address others
+ * already share, and changing the email needs a verification flow we don't
+ * have yet.
+ */
+export async function updateProfileAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const parsed = profileSchema.safeParse({
+    displayName: formData.get("displayName"),
+    bio: formData.get("bio") ?? "",
+    avatarHue: formData.get("avatarHue") ?? 210,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0]?.message ?? "Datos inválidos" };
+  }
+
+  const { displayName, bio, avatarHue } = parsed.data;
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { displayName, bio, avatarHue },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath(`/u/${user.handle}`);
+  revalidatePath("/");
+  revalidatePath("/cerca");
+  revalidatePath("/perfil");
+
+  return { success: "Perfil actualizado" };
+}
+
 const loginSchema = z.object({
   identifier: z.string().trim().min(1, "Escribe tu usuario o correo"),
   password: z.string().min(1, "Escribe tu contraseña"),

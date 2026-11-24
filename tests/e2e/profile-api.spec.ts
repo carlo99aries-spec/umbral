@@ -98,17 +98,47 @@ test.describe("API pública", () => {
 });
 
 test.describe("Edición de perfil", () => {
-  // HALLAZGO: la app muestra user.bio pero no existe ninguna pantalla ni
-  // acción para editarlo (nombre, bio o avatar). Se deja como fixme para que
-  // el hueco quede registrado en la suite en lugar de perderse en un informe.
-  test.fixme("el usuario puede editar su nombre y su bio", async ({ browser }) => {
+  test("el usuario puede editar su nombre, su bio y su color", async ({ browser }) => {
     const u = await newUser(browser, "edita");
     await u.page.goto("/settings");
+
     await u.page.fill('input[name="displayName"]', "Nombre Nuevo");
     await u.page.fill('textarea[name="bio"]', "Biografía nueva");
-    await u.page.click('button:has-text("Guardar")');
-    await expect(u.page.getByText("Nombre Nuevo")).toBeVisible();
+    // Range inputs reject fill(); set the value and let React see the input.
+    await u.page.locator('input[name="avatarHue"]').evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = "120";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    await u.page.click('button:has-text("Guardar cambios")');
+    await expect(u.page.getByText("Perfil actualizado")).toBeVisible();
+
+    // It persists: a fresh load of the settings carries the new values back.
+    await u.page.reload();
+    await expect(u.page.locator('input[name="displayName"]')).toHaveValue("Nombre Nuevo");
+    await expect(u.page.locator('input[name="avatarHue"]')).toHaveValue("120");
+
+    // And it is what strangers see on the public profile.
+    await u.page.goto(`/u/${u.handle}`);
+    await expect(u.page.getByRole("heading", { level: 1 })).toHaveText("Nombre Nuevo");
     await expect(u.page.getByText("Biografía nueva")).toBeVisible();
+
+    await u.close();
+  });
+
+  test("un nombre demasiado corto se rechaza con su mensaje", async ({ browser }) => {
+    const u = await newUser(browser, "corto");
+    await u.page.goto("/settings");
+
+    await u.page.fill('input[name="displayName"]', "A");
+    await u.page.click('button:has-text("Guardar cambios")');
+
+    await expect(u.page.getByText(/al menos 2 caracteres/)).toBeVisible();
+    // The stored name is untouched.
+    await u.page.goto(`/u/${u.handle}`);
+    await expect(u.page.getByRole("heading", { level: 1 })).toContainText("QA");
+
     await u.close();
   });
 });
