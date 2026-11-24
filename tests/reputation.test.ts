@@ -3,6 +3,7 @@ import {
   REPUTATION_CONFIG,
   TIERS,
   computeScore,
+  computeScoreWithLiveRaters,
   detectReciprocal,
   nextTier,
   raterWeight,
@@ -226,5 +227,57 @@ describe("detectReciprocal", () => {
     const received = [{ id: "r1", raterId: "u2", stars: 5, createdAt: t0 }];
     const given = [{ subjectId: "u9", stars: 5, createdAt: t0 }];
     expect(detectReciprocal(received, given).size).toBe(0);
+  });
+});
+
+describe("computeScoreWithLiveRaters (v0.2)", () => {
+  const now = new Date("2026-01-01T00:00:00Z");
+
+  it("uses the rater's live score instead of the stored snapshot", () => {
+    const ratings = [{ raterId: "u2", stars: 5, raterScore: 4.9, createdAt: now }];
+    const badHistory = Array.from({ length: 20 }, () => ({
+      stars: 1,
+      raterScore: 3.5,
+      createdAt: now,
+    }));
+
+    const live = computeScoreWithLiveRaters(ratings, { u2: badHistory }, now);
+    const snapshot = computeScore([{ stars: 5, raterScore: 4.9, createdAt: now }], now);
+
+    expect(live.score).toBeLessThan(snapshot.score);
+  });
+
+  it("a respected rater's bad vote hurts more than a discredited one's", () => {
+    const ratings = [{ raterId: "u2", stars: 1, raterScore: 4.9, createdAt: now }];
+    const strong = Array.from({ length: 20 }, () => ({ stars: 5, raterScore: 3.5, createdAt: now }));
+    const weak = Array.from({ length: 20 }, () => ({ stars: 1, raterScore: 3.5, createdAt: now }));
+
+    const fromStrong = computeScoreWithLiveRaters(ratings, { u2: strong }, now);
+    const fromWeak = computeScoreWithLiveRaters(ratings, { u2: weak }, now);
+
+    expect(fromStrong.score).toBeLessThan(fromWeak.score);
+  });
+
+  it("falls back to the stored snapshot when the rater has no history", () => {
+    const ratings = [{ raterId: "ghost", stars: 5, raterScore: 4.8, createdAt: now }];
+    const live = computeScoreWithLiveRaters(ratings, {}, now);
+    const snapshot = computeScore([{ stars: 5, raterScore: 4.8, createdAt: now }], now);
+
+    expect(live.score).toBeCloseTo(snapshot.score, 6);
+  });
+
+  it("still decays the rater's own history before using it", () => {
+    const ratings = [{ raterId: "u2", stars: 5, raterScore: 4.9, createdAt: now }];
+    const fresh = Array.from({ length: 20 }, () => ({ stars: 5, raterScore: 3.5, createdAt: now }));
+    const stale = Array.from({ length: 20 }, () => ({
+      stars: 5,
+      raterScore: 3.5,
+      createdAt: new Date(now.getTime() - 700 * 86_400_000),
+    }));
+
+    const a = computeScoreWithLiveRaters(ratings, { u2: fresh }, now);
+    const b = computeScoreWithLiveRaters(ratings, { u2: stale }, now);
+
+    expect(a.score).toBeGreaterThan(b.score);
   });
 });

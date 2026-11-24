@@ -84,6 +84,7 @@ export default async function HomePage() {
                     {tier.privileges.map((p) => (
                       <li key={p}>· {p}</li>
                     ))}
+                    <li>· {tier.dailyCodes} código{tier.dailyCodes === 1 ? "" : "s"} al día</li>
                   </ul>
                 </div>
               </div>

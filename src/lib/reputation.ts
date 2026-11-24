@@ -49,6 +49,8 @@ export interface Tier {
   minScore: number;
   /** Minimum number of ratings before this tier becomes reachable. */
   minRatings: number;
+  /** Interaction codes a member of this tier may issue per day. */
+  dailyCodes: number;
   /** What this score unlocks. The gate is the engine of anxiety. */
   privileges: string[];
   blurb: string;
@@ -63,10 +65,11 @@ export const TIERS: Tier[] = [
     label: "Platino",
     minScore: 4.5,
     minRatings: 25,
+    dailyCodes: 15,
     privileges: [
       "Acceso a eventos y listas de espera prioritarias",
       "Vuelos y reservas sin restricciones",
-      "Puedes emitir hasta 10 códigos de interacción al día",
+      "Perfil destacado en búsquedas",
     ],
     blurb: "La cima. Todos te sonríen y nadie te lo dice.",
   },
@@ -75,9 +78,9 @@ export const TIERS: Tier[] = [
     label: "Oro",
     minScore: 4.2,
     minRatings: 15,
+    dailyCodes: 8,
     privileges: [
       "Reservas en restaurantes y hospedaje",
-      "5 códigos de interacción al día",
       "Perfil destacado en búsquedas",
     ],
     blurb: "Estás dentro. Solo no te descuides.",
@@ -87,9 +90,9 @@ export const TIERS: Tier[] = [
     label: "Plata",
     minScore: 3.8,
     minRatings: 8,
+    dailyCodes: 5,
     privileges: [
       "Acceso general a la red",
-      "3 códigos de interacción al día",
     ],
     blurb: "Funcionas. Con esfuerzo, subes.",
   },
@@ -98,9 +101,9 @@ export const TIERS: Tier[] = [
     label: "Bronce",
     minScore: 3.0,
     minRatings: 0,
+    dailyCodes: 3,
     privileges: [
       "Acceso a la red pública",
-      "1 código de interacción al día",
     ],
     blurb: "Existes, pero el sistema te mira de reojo.",
   },
@@ -109,6 +112,10 @@ export const TIERS: Tier[] = [
     label: "Restringido",
     minScore: 0,
     minRatings: 0,
+    // One a day on purpose: below 3.00 the system throttles you, but a total
+    // lock would leave no way back up. A trap needs a door to be a critique
+    // instead of a death sentence.
+    dailyCodes: 1,
     privileges: [
       "Solo lectura: no puedes calificar a otros",
       "Tu perfil no aparece en búsquedas",
@@ -214,6 +221,45 @@ export function computeScore(ratings: RatingInput[], now: Date = new Date()): Sc
     effectiveWeight: round(weightTotal, 3),
     breakdown,
   };
+}
+
+export interface LiveRatingInput extends RatingInput {
+  raterId: string;
+}
+
+/**
+ * v0.2 — influence follows the rater's *current* standing.
+ *
+ * Each rater's own score is recomputed from their history and replaces the
+ * snapshot stored on the rating. That is the episode's real cruelty: when you
+ * fall, your opinion of everyone else is worth less, and their numbers move
+ * without a single new rating being written.
+ *
+ * Deliberately one level deep. A rater's history is itself scored with plain
+ * snapshots, which stops recursion (A rates B, B rates A) and keeps the cost
+ * at two queries instead of a graph walk.
+ */
+export function computeScoreWithLiveRaters(
+  ratings: LiveRatingInput[],
+  raterHistories: Record<string, RatingInput[]>,
+  now: Date = new Date(),
+): ScoreResult {
+  const resolved: RatingInput[] = ratings.map((rating) => {
+    const history = raterHistories[rating.raterId];
+    const liveScore =
+      history && history.length > 0
+        ? computeScore(history, now).score
+        : (rating.raterScore ?? REPUTATION_CONFIG.neutralRaterScore);
+
+    return {
+      stars: rating.stars,
+      raterScore: liveScore,
+      createdAt: rating.createdAt,
+      reciprocal: rating.reciprocal,
+    };
+  });
+
+  return computeScore(resolved, now);
 }
 
 /**

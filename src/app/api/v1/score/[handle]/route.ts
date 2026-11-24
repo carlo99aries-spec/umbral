@@ -48,7 +48,8 @@ export async function GET(
               ratingsNeeded: progress.ratingsNeeded,
             },
       algorithm: {
-        version: "1.0.0",
+        version: "1.1.0",
+        influence: "live",
         priorScore: REPUTATION_CONFIG.priorScore,
         priorWeight: REPUTATION_CONFIG.priorWeight,
         halfLifeDays: REPUTATION_CONFIG.halfLifeDays,

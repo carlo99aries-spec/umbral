@@ -3,9 +3,11 @@ import { prisma } from "./db";
 import {
   REPUTATION_CONFIG,
   computeScore,
+  computeScoreWithLiveRaters,
   detectReciprocal,
   resolveTier,
   tierProgress,
+  type RatingInput,
   type ScoreResult,
   type Tier,
 } from "./reputation";
@@ -49,13 +51,41 @@ export async function loadProfile(handle: string): Promise<ProfileView | null> {
     reciprocal: r.reciprocal || reciprocalIds.has(r.id),
   }));
 
-  const score = computeScore(
+  // v0.2: pull each rater's own history so their influence is computed from
+  // their *current* score, not the snapshot taken when they rated.
+  const raterIds = Array.from(new Set(ratings.map((r) => r.raterId)));
+  const raterRows = raterIds.length
+    ? await prisma.rating.findMany({
+        where: { subjectId: { in: raterIds } },
+        select: {
+          subjectId: true,
+          stars: true,
+          raterScore: true,
+          createdAt: true,
+          reciprocal: true,
+        },
+      })
+    : [];
+
+  const raterHistories: Record<string, RatingInput[]> = {};
+  for (const row of raterRows) {
+    (raterHistories[row.subjectId] ??= []).push({
+      stars: row.stars,
+      raterScore: row.raterScore,
+      createdAt: row.createdAt,
+      reciprocal: row.reciprocal,
+    });
+  }
+
+  const score = computeScoreWithLiveRaters(
     ratings.map((r) => ({
+      raterId: r.raterId,
       stars: r.stars,
       raterScore: r.raterScore,
       createdAt: r.createdAt,
       reciprocal: r.reciprocal,
     })),
+    raterHistories,
   );
 
   const tier = resolveTier(score.score, score.sampleSize);

@@ -117,10 +117,11 @@ export async function createTokenAction(_prev: ActionState, formData: FormData):
   if (!user) redirect("/login");
 
   const profile = await loadProfile(user.handle);
-  const tier = profile ? resolveTier(profile.score.score, profile.score.sampleSize) : null;
+  const tier = profile
+    ? resolveTier(profile.score.score, profile.score.sampleSize)
+    : resolveTier(3.5, 0);
 
-  const dailyLimit =
-    tier?.name === "PLATINUM" ? 10 : tier?.name === "GOLD" ? 5 : tier?.name === "SILVER" ? 3 : 1;
+  const dailyLimit = tier.dailyCodes;
 
   const since = new Date(Date.now() - 86_400_000);
   const issuedToday = await prisma.interactionToken.count({

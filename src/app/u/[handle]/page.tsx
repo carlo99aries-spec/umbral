@@ -137,6 +137,10 @@ export default async function ProfilePage({
                   {p}
                 </li>
               ))}
+              <li className="flex gap-2">
+                <span className="text-zinc-700">—</span>
+                {tier.dailyCodes} código{tier.dailyCodes === 1 ? "" : "s"} de interacción al día
+              </li>
             </ul>
           </section>
 
