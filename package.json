@@ -30,6 +30,7 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset",
     "seed": "tsx scripts/seed.ts",
+    "inspect": "tsx scripts/inspect-score.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
