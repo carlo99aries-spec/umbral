@@ -25,7 +25,12 @@ export async function createSession(userId: string, userAgent = ""): Promise<voi
   jar.set(SESSION_COOKIE, id, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Secure everywhere in production, except when explicitly testing a local
+    // HTTP server: browsers drop Secure cookies over http, and a build served
+    // without TLS would otherwise fail logins silently.
+    secure:
+      process.env.NODE_ENV === "production" &&
+      process.env.UMBRAL_ALLOW_INSECURE_COOKIES !== "1",
     path: "/",
     expires: expiresAt,
   });

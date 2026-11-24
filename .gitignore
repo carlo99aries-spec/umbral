@@ -41,3 +41,10 @@ coverage/
 build.log
 
 audit.json
+
+# QA artifacts
+qa-report
+qa-results.json
+test-results
+playwright-report
+

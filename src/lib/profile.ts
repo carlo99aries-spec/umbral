@@ -114,12 +114,15 @@ export async function loadProfile(handle: string): Promise<ProfileView | null> {
     return { ...rating, delta: round(score.score - without, 2) };
   });
 
-  const [auraAgg] = await prisma.$queryRaw<Array<{ avg: number | null; count: number }>>`
-    SELECT AVG(pr.stars) AS avg, COUNT(*) AS count
-    FROM "PostRating" pr
-    JOIN "Post" p ON p.id = pr.postId
-    WHERE p.authorId = ${user.id}
-  `;
+  // Content signal only. Deliberately a Prisma aggregate, not raw SQL: the
+  // previous `$queryRaw` used unquoted camelCase columns, which Postgres folds
+  // to lowercase (postid) and rejected at runtime while SQLite accepted it.
+  // Typed aggregates are portable and cannot drift with the schema.
+  const auraAgg = await prisma.postRating.aggregate({
+    where: { post: { authorId: user.id } },
+    _avg: { stars: true },
+    _count: { _all: true },
+  });
 
   return {
     user,
@@ -127,8 +130,8 @@ export async function loadProfile(handle: string): Promise<ProfileView | null> {
     tier,
     progress: tierProgress(score.score, score.sampleSize),
     ratings: decorated,
-    aura: auraAgg?.avg == null ? null : round(Number(auraAgg.avg), 1),
-    auraCount: Number(auraAgg?.count ?? 0),
+    aura: auraAgg._avg.stars == null ? null : round(auraAgg._avg.stars, 1),
+    auraCount: auraAgg._count._all,
   };
 }
 
