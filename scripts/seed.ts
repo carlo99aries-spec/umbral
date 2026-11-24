@@ -123,6 +123,74 @@ async function main() {
     ],
   });
 
+  // --- Posts del feed ---
+  await prisma.post.deleteMany({ where: { authorId: { in: users.map((u) => u.id) } } });
+
+  const POSTS: Array<{ handle: string; caption: string; hue: number }> = [
+    {
+      handle: "naomi",
+      caption: "Casa nueva, luz de tarde, puntaje intacto. Todo sale bien cuando sonríes primero.",
+      hue: 190,
+    },
+    {
+      handle: "lacie",
+      caption: "Ensayando la sonrisa de 4.5 frente al espejo. Cuarenta minutos. No es normal, ¿verdad?",
+      hue: 20,
+    },
+    {
+      handle: "ryan",
+      caption: "Brunch con gente importante. Cada foto es una inversión.",
+      hue: 45,
+    },
+    {
+      handle: "susan",
+      caption: "Las plantas del balcón no me califican. Se agradece el descanso.",
+      hue: 130,
+    },
+    {
+      handle: "chester",
+      caption: "Escribí tres veces esta publicación y las tres sonaba a súplica. Aquí va la cuarta: no me importa.",
+      hue: 280,
+    },
+    {
+      handle: "karen",
+      caption: "Reservas confirmadas para el jueves. Solo nivel Oro en adelante, lo siento.",
+      hue: 340,
+    },
+    {
+      handle: "paul",
+      caption: "El cielo desde el vuelo privado. La vista mejora cuando tu número es 4.5.",
+      hue: 210,
+    },
+  ];
+
+  let postSeed = 7;
+  const postRand = () => {
+    postSeed = (postSeed * 1103515245 + 12345) % 2147483648;
+    return postSeed / 2147483648;
+  };
+
+  for (const spec of POSTS) {
+    const author = users.find((u) => u.handle === spec.handle);
+    if (!author) continue;
+
+    const post = await prisma.post.create({
+      data: { authorId: author.id, caption: spec.caption, hue: spec.hue },
+    });
+
+    const voterCount = 2 + Math.floor(postRand() * 5);
+    const voters = [...users].sort(() => postRand() - 0.5).slice(0, voterCount);
+
+    for (const voter of voters) {
+      if (voter.id === author.id) continue;
+      // Content is rated a bit more generously than people are.
+      const stars = Math.max(1, Math.min(5, Math.round(2.8 + postRand() * 2.4)));
+      await prisma.postRating.create({
+        data: { postId: post.id, raterId: voter.id, stars },
+      });
+    }
+  }
+
   for (const u of users) {
     const received = await prisma.rating.findMany({
       where: { subjectId: u.id },

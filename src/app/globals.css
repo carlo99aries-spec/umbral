@@ -1,62 +1,134 @@
 @import "tailwindcss";
 
+/*
+ * Paleta tomada del diseño de Carlos (pastel de la serie):
+ * crema #FDF1EC · rosa #F7D3DD · menta #CDEBE0 · celeste #D6E8F7
+ * texto #3B3550 · dorado de estrellas #F2B84B · coral #E8836B
+ * Tipografía: Nunito (redondeada).
+ */
 :root {
-  color-scheme: dark;
-  --bg: #08080b;
-  --panel: #101015;
-  --line: #1f1f28;
+  color-scheme: light;
+  --cream: #fdf1ec;
+  --cream-2: #faf9f5;
+  --pink: #f7d3dd;
+  --mint: #cdebe0;
+  --sky: #d6e8f7;
+  --peach: #fbe3a6;
+  --ink: #3b3550;
+  --muted: #6b6480;
+  --gold: #f2b84b;
+  --gold-dark: #b9852b;
+  --coral: #e8836b;
+  --card: #ffffff;
 }
 
 html,
 body {
-  background-color: var(--bg);
+  background-color: var(--cream);
+  color: var(--ink);
 }
 
 body {
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family: "Nunito", ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* Soft pastel wash behind everything, like the mockup's cream canvas. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  pointer-events: none;
   z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(60rem 40rem at 50% -10%, rgba(120, 120, 255, 0.09), transparent 70%),
-    radial-gradient(40rem 30rem at 90% 110%, rgba(255, 120, 60, 0.06), transparent 70%);
+    radial-gradient(38rem 26rem at 12% -8%, rgba(247, 211, 221, 0.55), transparent 70%),
+    radial-gradient(34rem 24rem at 96% 4%, rgba(214, 232, 247, 0.55), transparent 70%),
+    radial-gradient(30rem 22rem at 50% 108%, rgba(205, 235, 224, 0.5), transparent 70%);
 }
 
-.panel {
-  background-color: var(--panel);
-  border: 1px solid var(--line);
+.panel,
+.card {
+  background-color: var(--card);
+  border-radius: 24px;
+  box-shadow:
+    0 10px 30px rgba(59, 53, 80, 0.07),
+    0 1px 2px rgba(59, 53, 80, 0.05);
 }
 
 .hairline {
-  border-color: var(--line);
+  border-color: rgba(59, 53, 80, 0.08);
 }
 
-/* The number is the product. Give it presence. */
+/* The number is the product. Give it presence, softened for the pastel world. */
 .score-display {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
-  text-shadow: 0 0 40px rgba(160, 170, 255, 0.28);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.ink {
+  color: var(--ink);
+}
+.muted {
+  color: var(--muted);
+}
+
+.pill {
+  border-radius: 999px;
+}
+
+/* Inputs: white, rounded, no hard borders. */
+.field {
+  width: 100%;
+  border-radius: 16px;
+  border: 1.5px solid rgba(59, 53, 80, 0.1);
+  background: #fff;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.field:focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px rgba(232, 131, 107, 0.14);
+}
+.field::placeholder {
+  color: rgba(107, 100, 128, 0.65);
+}
+
+.btn-primary {
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--coral), #f09a7f);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(232, 131, 107, 0.32);
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(232, 131, 107, 0.38);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  border-radius: 999px;
+  border: 1.5px solid rgba(59, 53, 80, 0.12);
+  color: var(--ink);
+  font-weight: 600;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.btn-ghost:hover {
+  border-color: rgba(59, 53, 80, 0.28);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 ::selection {
-  background: rgba(140, 150, 255, 0.35);
-}
-
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #6b6b7b;
+  background: rgba(242, 184, 75, 0.35);
 }

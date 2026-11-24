@@ -215,6 +215,60 @@ export async function rateAction(_prev: ActionState, formData: FormData): Promis
   redirect(`/u/${token.issuer.handle}?rated=1`);
 }
 
+/**
+ * Rate a post, 1-5. Upsert: re-rating replaces your previous stars.
+ *
+ * This does NOT touch the author's reputation. Feed stars are a content
+ * signal; reputation comes only from verified 1:1 interactions.
+ */
+export async function ratePostAction(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const postId = String(formData.get("postId") ?? "");
+  const stars = Number(formData.get("stars"));
+
+  if (!postId || !Number.isInteger(stars) || stars < 1 || stars > 5) return;
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true },
+  });
+  if (!post) return;
+  if (post.authorId === user.id) return; // no self-stars
+
+  await prisma.postRating.upsert({
+    where: { postId_raterId: { postId, raterId: user.id } },
+    update: { stars },
+    create: { postId, raterId: user.id, stars },
+  });
+
+  revalidatePath("/");
+}
+
+/** Publish a post. Text required; image URL optional (no upload pipeline yet). */
+export async function createPostAction(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const caption = String(formData.get("caption") ?? "").trim().slice(0, 280);
+  const rawUrl = String(formData.get("imageUrl") ?? "").trim().slice(0, 500);
+  const imageUrl = /^https?:\/\//.test(rawUrl) ? rawUrl : null;
+
+  if (!caption && !imageUrl) return;
+
+  await prisma.post.create({
+    data: {
+      authorId: user.id,
+      caption,
+      imageUrl,
+      hue: crypto.randomInt(0, 360),
+    },
+  });
+
+  revalidatePath("/");
+}
+
 /** Report a profile. Stored, not auto-actioned. */
 export async function reportAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const reporter = await getCurrentUser();

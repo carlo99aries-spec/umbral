@@ -32,82 +32,84 @@ export default async function SettingsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">Ajustes</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Tu número, tus códigos, tu cuenta. Nada más.
-        </p>
+    <div className="space-y-4 pt-2">
+      <div className="px-1">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[#3b3550]">Ajustes</h1>
+        <p className="mt-1 text-sm text-[#6b6480]">Tu número, tus códigos, tu cuenta.</p>
       </div>
 
-      {/* -------------------------------------------------------- cuenta */}
-      <section className="panel rounded-2xl p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-zinc-100">{user.displayName}</p>
-            <p className="text-xs text-zinc-500">@{user.handle}</p>
+      <section className="panel p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold text-[#3b3550]">{user.displayName}</p>
+            <p className="text-xs font-semibold text-[#a49db8]">@{user.handle}</p>
           </div>
           <TierBadge name={tier.name} label={tier.label} />
         </div>
 
-        <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-zinc-900 pt-4 text-center">
+        <dl className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-[#faf7fb] py-3 text-center">
           <div>
-            <dt className="text-[10px] uppercase tracking-wider text-zinc-600">puntaje</dt>
-            <dd className="mt-1 font-mono text-lg text-zinc-200">
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#a49db8]">puntaje</dt>
+            <dd className="score-display mt-0.5 text-lg">
               {profile ? profile.score.score.toFixed(2) : "3.50"}
             </dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-wider text-zinc-600">recibidas</dt>
-            <dd className="mt-1 font-mono text-lg text-zinc-200">{profile?.score.sampleSize ?? 0}</dd>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#a49db8]">recibidas</dt>
+            <dd className="score-display mt-0.5 text-lg">{profile?.score.sampleSize ?? 0}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-wider text-zinc-600">dadas</dt>
-            <dd className="mt-1 font-mono text-lg text-zinc-200">{givenCount}</dd>
+            <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#a49db8]">dadas</dt>
+            <dd className="score-display mt-0.5 text-lg">{givenCount}</dd>
           </div>
         </dl>
 
-        <div className="mt-5 flex items-center justify-between border-t border-zinc-900 pt-4">
+        <div className="mt-4 flex items-center justify-between">
           <Link
             href={`/u/${user.handle}`}
-            className="text-xs text-zinc-400 underline underline-offset-4 transition hover:text-zinc-200"
+            className="text-xs font-bold text-[#e8836b] underline underline-offset-4"
           >
-            Ver mi perfil público
+            Ver mi perfil
           </Link>
           <LogoutButton />
         </div>
       </section>
 
-      {/* ------------------------------------------------------- códigos */}
-      <section className="panel rounded-2xl p-5">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+      <section className="panel p-5">
+        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
           Códigos de interacción
         </h2>
-        <p className="mt-2 mb-4 text-xs leading-relaxed text-zinc-500">
+        <p className="mb-3 mt-1.5 text-xs leading-relaxed text-[#6b6480]">
           Un código por interacción real. Caduca en 24 h y sirve una sola vez. Tu nivel{" "}
-          <span className="text-zinc-300">{tier.label}</span> define cuántos puedes generar al día.
+          <span className="font-extrabold text-[#3b3550]">{tier.label}</span> te da{" "}
+          <span className="font-extrabold text-[#3b3550]">{tier.dailyCodes}</span> al día.
         </p>
 
         <TokenForm baseUrl={baseUrl} />
 
         {tokens.length > 0 && (
-          <ul className="mt-6 divide-y divide-zinc-900 border-t border-zinc-900">
+          <ul className="mt-5 space-y-2 border-t border-[#f3eef6] pt-4">
             {tokens.map((t) => {
               const expired = t.expiresAt.getTime() < Date.now();
               const state = t.usedAt ? "usado" : expired ? "expirado" : "activo";
               return (
-                <li key={t.id} className="flex items-center justify-between gap-3 py-2.5">
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-[#faf7fb] px-3 py-2.5"
+                >
                   <div className="min-w-0">
-                    <code className="block truncate font-mono text-xs text-zinc-300">/rate/{t.code}</code>
-                    <p className="truncate text-[11px] text-zinc-600">
+                    <code className="block truncate font-mono text-[11px] text-[#3b3550]">
+                      /rate/{t.code}
+                    </code>
+                    <p className="truncate text-[11px] font-semibold text-[#a49db8]">
                       {t.note || "sin contexto"} · {timeAgo(t.createdAt)}
                     </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider ${
+                    className={`pill shrink-0 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
                       state === "activo"
-                        ? "border-emerald-900/60 bg-emerald-950/30 text-emerald-400"
-                        : "border-zinc-800 text-zinc-600"
+                        ? "bg-[#cdebe0] text-[#2f6b57]"
+                        : "bg-[#f3eef6] text-[#a49db8]"
                     }`}
                   >
                     {state}
@@ -119,17 +121,20 @@ export default async function SettingsPage() {
         )}
       </section>
 
-      {/* --------------------------------------------------------- datos */}
-      <section className="panel rounded-2xl p-5">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">Transparencia</h2>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-          Tus calificaciones son anónimas para el resto del mundo, pero tú puedes ver{" "}
-          <em>cómo</em> se calcula tu número: estrellas, peso del votante y decay temporal. La
-          fórmula completa está en <code className="text-zinc-400">src/lib/reputation.ts</code> y no
-          se toca sin un commit público.
+      <section className="panel p-5">
+        <h2 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
+          Transparencia
+        </h2>
+        <p className="mt-2 text-xs leading-relaxed text-[#6b6480]">
+          Tus calificaciones son anónimas, pero tú puedes ver <em>cómo</em> se calcula tu número:
+          estrellas, peso del votante y decay temporal. La fórmula vive en{" "}
+          <code className="rounded bg-[#faf7fb] px-1.5 py-0.5 text-[#3b3550]">
+            src/lib/reputation.ts
+          </code>{" "}
+          y no cambia sin un commit público.
         </p>
-        <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-          ¿Crees que tu número está manipulado? Reporta el perfil o abre un issue en el repositorio.
+        <p className="mt-2 text-xs leading-relaxed text-[#6b6480]">
+          Las estrellas de tus publicaciones no suben tu reputación: son un número aparte.
         </p>
       </section>
     </div>

@@ -6,6 +6,7 @@ import {
   computeScoreWithLiveRaters,
   detectReciprocal,
   resolveTier,
+  round,
   tierProgress,
   type RatingInput,
   type ScoreResult,
@@ -17,8 +18,14 @@ export interface ProfileView {
   score: ScoreResult;
   tier: Tier;
   progress: ReturnType<typeof tierProgress>;
-  /** Ratings received, newest first, with reciprocity resolved. */
-  ratings: Array<Rating & { reciprocal: boolean }>;
+  /**
+   * Ratings received, newest first, with reciprocity resolved and `delta`:
+   * how much that single rating contributes to the current score (leave-one-out).
+   */
+  ratings: Array<Rating & { reciprocal: boolean; delta: number }>;
+  /** Mean of stars received on posts. Content signal only — never reputation. */
+  aura: number | null;
+  auraCount: number;
 }
 
 /**
@@ -90,12 +97,38 @@ export async function loadProfile(handle: string): Promise<ProfileView | null> {
 
   const tier = resolveTier(score.score, score.sampleSize);
 
+  // Leave-one-out: what did each rating actually contribute? Bounded to the
+  // 20 most recent so a long history cannot turn this into O(n²) work.
+  const decorated = ratings.map((rating, index) => {
+    if (index >= 20) return { ...rating, delta: 0 };
+    const others = ratings
+      .filter((r) => r.id !== rating.id)
+      .map((r) => ({
+        raterId: r.raterId,
+        stars: r.stars,
+        raterScore: r.raterScore,
+        createdAt: r.createdAt,
+        reciprocal: r.reciprocal,
+      }));
+    const without = computeScoreWithLiveRaters(others, raterHistories).score;
+    return { ...rating, delta: round(score.score - without, 2) };
+  });
+
+  const [auraAgg] = await prisma.$queryRaw<Array<{ avg: number | null; count: number }>>`
+    SELECT AVG(pr.stars) AS avg, COUNT(*) AS count
+    FROM "PostRating" pr
+    JOIN "Post" p ON p.id = pr.postId
+    WHERE p.authorId = ${user.id}
+  `;
+
   return {
     user,
     score,
     tier,
     progress: tierProgress(score.score, score.sampleSize),
-    ratings,
+    ratings: decorated,
+    aura: auraAgg?.avg == null ? null : round(Number(auraAgg.avg), 1),
+    auraCount: Number(auraAgg?.count ?? 0),
   };
 }
 

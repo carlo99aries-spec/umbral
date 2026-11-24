@@ -10,49 +10,34 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, initial);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-3.5">
       <label className="block">
-        <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+        <span className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#a49db8]">
           Usuario o correo
         </span>
-        <input
-          name="identifier"
-          required
-          autoComplete="username"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-zinc-600"
-        />
+        <input name="identifier" required autoComplete="username" className="field" />
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+        <span className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#a49db8]">
           Contraseña
         </span>
-        <input
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-zinc-600"
-        />
+        <input name="password" type="password" required autoComplete="current-password" className="field" />
       </label>
 
       {state.error && (
-        <p className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-2xl bg-[#f7d3dd] px-4 py-3 text-sm font-semibold text-[#8a4552]">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200 disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className="btn-primary w-full px-5 py-3 text-sm">
         {pending ? "Entrando…" : "Entrar"}
       </button>
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs font-semibold text-[#a49db8]">
         ¿No tienes cuenta?{" "}
-        <Link href="/signup" className="text-zinc-300 underline underline-offset-4 hover:text-white">
+        <Link href="/signup" className="text-[#e8836b] underline underline-offset-4">
           Crea una
         </Link>
       </p>

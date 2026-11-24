@@ -31,6 +31,8 @@ model User {
   tokensUsed      InteractionToken[] @relation("TokensUsed")
   reportsFiled    Report[]           @relation("ReportsFiled")
   reportsAgainst  Report[]           @relation("ReportsAgainst")
+  posts           Post[]             @relation("Posts")
+  postRatings     PostRating[]       @relation("PostRatingsGiven")
 
   @@index([handle])
 }
@@ -97,4 +99,39 @@ model Report {
   subject  User @relation("ReportsAgainst", fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@index([subjectId])
+}
+
+/// A post in the feed.
+///
+/// Stars on a post are deliberately NOT part of the author's reputation score.
+/// Reputation comes only from verified 1:1 interactions (interaction codes).
+/// A feed you can farm with likes would destroy the whole anti-collusion design;
+/// this keeps two distinct numbers: reputacion (conducta) y aura (contenido).
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  caption   String   @default("")
+  imageUrl  String?
+  hue       Int      @default(28)
+  createdAt DateTime @default(now())
+
+  author  User         @relation("Posts", fields: [authorId], references: [id], onDelete: Cascade)
+  ratings PostRating[]
+
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model PostRating {
+  id        String   @id @default(cuid())
+  postId    String
+  raterId   String
+  stars     Int
+  createdAt DateTime @default(now())
+
+  post  Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  rater User @relation("PostRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, raterId])
+  @@index([postId])
 }

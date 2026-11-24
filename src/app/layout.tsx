@@ -7,25 +7,16 @@ import { Avatar } from "@/components/Avatar";
 import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
-  title: "Umbral — la red social de la reputación",
+  title: "Umbral — la red de la reputación",
   description:
     "Cada interacción termina en una calificación. Tu promedio ponderado decide a dónde puedes entrar. Proyecto open source inspirado en «Caída en picado».",
   applicationName: "Umbral",
-  appleWebApp: {
-    capable: true,
-    title: "Umbral",
-    statusBarStyle: "black-translucent",
-  },
+  appleWebApp: { capable: true, title: "Umbral", statusBarStyle: "default" },
   formatDetection: { telephone: false },
-  openGraph: {
-    title: "Umbral — red de reputación",
-    description: "Todos te califican. Siempre.",
-    type: "website",
-  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08080b",
+  themeColor: "#fdf1ec",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -37,44 +28,49 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="es">
-      <body className="min-h-screen text-zinc-200">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen">
         <ServiceWorker />
-        <header className="sticky top-0 z-50 border-b border-zinc-900/80 bg-[#08080b]/85 backdrop-blur-md">
-          <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-            <Link href="/" className="group flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-indigo-400 to-fuchsia-500 text-sm font-black text-white">
+
+        <header className="sticky top-0 z-50 bg-[#fdf1ec]/85 backdrop-blur-md">
+          <nav className="mx-auto flex h-16 max-w-[560px] items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-[#f7d3dd] to-[#d6e8f7] text-lg font-extrabold text-[#3b3550] shadow-[0_4px_12px_rgba(59,53,80,.12)]">
                 U
               </span>
-              <span className="text-[15px] font-semibold tracking-tight text-zinc-100">umbral</span>
-              <span className="hidden rounded-full border border-zinc-800 px-2 py-0.5 text-[9px] uppercase tracking-widest text-zinc-500 sm:inline">
-                alpha
-              </span>
+              <span className="text-lg font-extrabold tracking-tight text-[#3b3550]">umbral</span>
             </Link>
 
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1 text-sm">
               {user ? (
                 <>
                   <Link
-                    href={`/u/${user.handle}`}
-                    className="flex items-center gap-2 text-zinc-400 transition hover:text-zinc-100"
+                    href="/settings"
+                    className="rounded-full px-3 py-1.5 font-semibold text-[#6b6480] transition hover:bg-white/70 hover:text-[#3b3550]"
                   >
-                    <Avatar name={user.displayName} hue={user.avatarHue} size={26} />
-                    <span className="hidden sm:inline">@{user.handle}</span>
-                  </Link>
-                  <Link href="/settings" className="text-zinc-500 transition hover:text-zinc-200">
                     Ajustes
                   </Link>
-                  <LogoutButton />
+                  <Link href={`/u/${user.handle}`} className="ml-1">
+                    <Avatar name={user.displayName} hue={user.avatarHue} size={32} ring />
+                  </Link>
+                  <LogoutButton className="ml-2 rounded-full px-2 py-1 text-[#a49db8] hover:text-[#3b3550]" />
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="text-zinc-400 transition hover:text-zinc-100">
+                  <Link
+                    href="/login"
+                    className="rounded-full px-3 py-1.5 font-semibold text-[#6b6480] transition hover:text-[#3b3550]"
+                  >
                     Entrar
                   </Link>
-                  <Link
-                    href="/signup"
-                    className="rounded-lg bg-white px-3.5 py-1.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-200"
-                  >
+                  <Link href="/signup" className="btn-primary px-4 py-2 text-sm">
                     Crear cuenta
                   </Link>
                 </>
@@ -83,22 +79,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl px-4 py-10">{children}</main>
+        <main className="mx-auto w-full max-w-[560px] px-4 pb-16 pt-4">{children}</main>
 
-        <footer className="mx-auto max-w-5xl px-4 pb-12 pt-6">
-          <div className="flex flex-col gap-2 border-t border-zinc-900 pt-6 text-xs text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Umbral es software libre (AGPL-3.0) y una crítica, no un servicio de crédito social.
-            </p>
-            <a
-              href="https://github.com/carlo99aries-spec/umbral"
-              className="text-zinc-500 underline underline-offset-4 transition hover:text-zinc-300"
-              target="_blank"
-              rel="noreferrer"
-            >
-              github.com/carlo99aries-spec/umbral
-            </a>
-          </div>
+        <footer className="mx-auto max-w-[560px] px-4 pb-10">
+          <p className="text-center text-[11px] leading-relaxed text-[#a49db8]">
+            Umbral es software libre (AGPL-3.0) y una crítica, no un servicio de crédito social.{" "}
+            <Link href="/about" className="underline underline-offset-2 hover:text-[#6b6480]">
+              Por qué existe
+            </Link>
+          </p>
         </footer>
       </body>
     </html>

@@ -18,18 +18,13 @@ export function ReportForm({ handle }: { handle: string }) {
   const [state, formAction, pending] = useActionState(reportAction, initial);
 
   return (
-    <details className="group">
-      <summary className="cursor-pointer list-none text-xs text-zinc-600 transition hover:text-zinc-400">
+    <details>
+      <summary className="cursor-pointer list-none text-center text-xs font-semibold text-[#c3bcd2] transition hover:text-[#6b6480]">
         Reportar este perfil
       </summary>
-      <form action={formAction} className="mt-3 space-y-3">
+      <form action={formAction} className="mt-3 space-y-2">
         <input type="hidden" name="handle" value={handle} />
-        <select
-          name="reason"
-          required
-          defaultValue=""
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-zinc-600"
-        >
+        <select name="reason" required defaultValue="" className="field text-sm">
           <option value="" disabled>
             Motivo…
           </option>
@@ -44,15 +39,11 @@ export function ReportForm({ handle }: { handle: string }) {
           rows={2}
           maxLength={1000}
           placeholder="Detalles (opcional)"
-          className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+          className="field resize-none text-sm"
         />
-        {state.error && <p className="text-xs text-red-400">{state.error}</p>}
-        {state.success && <p className="text-xs text-emerald-400">{state.success}</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-600 disabled:opacity-50"
-        >
+        {state.error && <p className="text-xs font-semibold text-[#8a4552]">{state.error}</p>}
+        {state.success && <p className="text-xs font-semibold text-[#2f6b57]">{state.success}</p>}
+        <button type="submit" disabled={pending} className="btn-ghost w-full px-4 py-2 text-xs">
           {pending ? "Enviando…" : "Enviar reporte"}
         </button>
       </form>

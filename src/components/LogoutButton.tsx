@@ -5,7 +5,7 @@ export function LogoutButton({ className = "" }: { className?: string }) {
     <form action={logoutAction}>
       <button
         type="submit"
-        className={`text-sm text-zinc-500 transition hover:text-zinc-200 ${className}`}
+        className={`text-sm font-semibold text-[#a49db8] transition hover:text-[#3b3550] ${className}`}
       >
         Salir
       </button>

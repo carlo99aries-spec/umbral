@@ -1,11 +1,11 @@
 /**
- * The score, rendered as a ring. Purely presentational.
- * 1.0 = empty, 5.0 = full circle.
+ * The score, rendered as a soft ring. 1.0 = empty, 5.0 = full.
+ * Pastel version of the mockup's big number.
  */
 export function ScoreRing({
   score,
-  size = 168,
-  stroke = 10,
+  size = 176,
+  stroke = 12,
 }: {
   score: number;
   size?: number;
@@ -18,14 +18,14 @@ export function ScoreRing({
 
   const tone =
     score >= 4.5
-      ? "#67e8f9"
+      ? "#7fb8dd"
       : score >= 4.2
-        ? "#fcd34d"
+        ? "#e8b446"
         : score >= 3.8
-          ? "#d4d4d8"
+          ? "#a9a3bd"
           : score >= 3.0
-            ? "#fb923c"
-            : "#f87171";
+            ? "#e8a08a"
+            : "#e8836b";
 
   return (
     <div className="relative grid place-items-center" style={{ width: size, height: size }}>
@@ -35,7 +35,7 @@ export function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#1d1d26"
+          stroke="rgba(59,53,80,.08)"
           strokeWidth={stroke}
         />
         <circle
@@ -51,10 +51,15 @@ export function ScoreRing({
         />
       </svg>
       <div className="absolute text-center">
-        <div className="score-display font-bold leading-none" style={{ fontSize: size * 0.28, color: tone }}>
-          {score.toFixed(2)}
+        <div
+          className="score-display leading-none"
+          style={{ fontSize: size * 0.3, color: tone }}
+        >
+          {score.toFixed(1)}
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-zinc-500">de 5.00</div>
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#a49db8]">
+          de 5.0
+        </div>
       </div>
     </div>
   );

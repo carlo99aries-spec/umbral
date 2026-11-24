@@ -33,185 +33,188 @@ export default async function ProfilePage({
 
   const me = await getCurrentUser();
   const isMe = me?.id === profile.user.id;
-  const { user, score, tier, progress, ratings } = profile;
+  const { user, score, tier, progress, ratings, aura, auraCount } = profile;
+
+  const gateScore = progress?.next.minScore ?? 5;
+  const span = Math.max(0.01, gateScore - tier.minScore);
+  const pct = Math.min(100, Math.max(3, ((score.score - tier.minScore) / span) * 100));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {rated && (
-        <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
+        <div className="rounded-2xl bg-[#cdebe0] px-4 py-3 text-sm font-semibold text-[#2f6b57]">
           Calificación registrada. Su número ya se movió.
         </div>
       )}
 
-      {/* ------------------------------------------------------ cabecera */}
-      <section className="panel overflow-hidden rounded-2xl">
-        <div
-          className="h-24 w-full"
-          style={{
-            background: `linear-gradient(115deg, hsl(${user.avatarHue} 55% 22%), hsl(${(user.avatarHue + 60) % 360} 45% 12%))`,
-          }}
-        />
-        <div className="px-6 pb-6">
-          <div className="-mt-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-end gap-4">
-              <Avatar name={user.displayName} hue={user.avatarHue} size={80} ring />
-              <div className="pb-1">
-                <h1 className="text-xl font-bold tracking-tight text-white">{user.displayName}</h1>
-                <p className="text-sm text-zinc-500">@{user.handle}</p>
-              </div>
+      {/* ------------------------------------------------------ identidad */}
+      <section className="panel p-5">
+        <div className="flex items-center gap-4">
+          <Avatar name={user.displayName} hue={user.avatarHue} size={64} ring />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-xl font-extrabold text-[#3b3550]">{user.displayName}</h1>
+            <p className="text-sm font-semibold text-[#a49db8]">@{user.handle}</p>
+          </div>
+          <TierBadge name={tier.name} label={tier.label} />
+        </div>
+
+        {user.bio && (
+          <p className="mt-3 text-sm leading-relaxed text-[#6b6480]">{user.bio}</p>
+        )}
+      </section>
+
+      {/* ------------------------------------------------- puntaje y meta */}
+      <section className="panel px-5 pb-5 pt-6">
+        <div className="flex flex-col items-center">
+          <ScoreRing score={score.score} />
+          <p className="mt-2 text-center text-sm font-semibold text-[#6b6480]">{tier.blurb}</p>
+        </div>
+
+        {progress ? (
+          <div className="mt-6">
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="font-extrabold text-[#3b3550]">
+                Hacia {progress.next.label} · {progress.next.minScore.toFixed(1)}
+              </span>
+              <span className="font-bold text-[#e8836b]">
+                faltan {progress.pointsNeeded.toFixed(2)}
+              </span>
             </div>
 
-            <div className="flex items-center gap-3 pb-1">
-              <TierBadge name={tier.name} label={tier.label} size="lg" />
-              {isMe && (
-                <Link
-                  href="/settings"
-                  className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-600"
-                >
-                  Ajustes
-                </Link>
-              )}
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#f3eef6]">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#f7d3dd] via-[#f2b84b] to-[#e8b446] transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+
+            <p className="mt-2 text-xs font-semibold text-[#a49db8]">
+              {progress.ratingsNeeded > 0
+                ? `Necesitas ${progress.ratingsNeeded} calificación${progress.ratingsNeeded === 1 ? "" : "es"} más para que cuente.`
+                : "Ya tienes las calificaciones mínimas. Solo falta el número."}
+            </p>
+
+            <div className="mt-4 rounded-2xl bg-[#faf7fb] p-4">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
+                Se desbloquea en {progress.next.label}
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm text-[#6b6480]">
+                {progress.next.privileges.map((p) => (
+                  <li key={p} className="flex gap-2">
+                    <span className="text-[#e8836b]">✦</span>
+                    {p}
+                  </li>
+                ))}
+                <li className="flex gap-2">
+                  <span className="text-[#e8836b]">✦</span>
+                  {progress.next.dailyCodes} códigos de interacción al día
+                </li>
+              </ul>
             </div>
           </div>
+        ) : (
+          <p className="mt-6 rounded-2xl bg-[#d6e8f7] px-4 py-3 text-center text-sm font-bold text-[#2f5c80]">
+            Estás en la cima. No hay nada arriba — y eso también pesa.
+          </p>
+        )}
 
-          {user.bio && <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">{user.bio}</p>}
+        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f0ecf4] pt-4 text-center">
+          <Stat label="reputación" value={score.score.toFixed(2)} />
+          <Stat label="calificaciones" value={String(score.sampleSize)} />
+          <Stat
+            label="aura de contenido"
+            value={aura !== null ? aura.toFixed(1) : "—"}
+            hint={auraCount > 0 ? `${auraCount} votos` : "sin publicaciones"}
+          />
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        {/* -------------------------------------------------- columna score */}
-        <div className="space-y-4">
-          <section className="panel flex flex-col items-center rounded-2xl p-6">
-            <ScoreRing score={score.score} />
-            <p className="mt-4 text-center text-sm text-zinc-400">{tier.blurb}</p>
-
-            <div className="mt-5 grid w-full grid-cols-2 gap-3 border-t border-zinc-900 pt-4 text-center">
-              <div>
-                <div className="font-mono text-lg text-zinc-200">{score.sampleSize}</div>
-                <div className="text-[10px] uppercase tracking-wider text-zinc-600">calificaciones</div>
-              </div>
-              <div>
-                <div className="font-mono text-lg text-zinc-200">
-                  {Math.round(score.confidence * 100)}%
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-zinc-600">confianza</div>
-              </div>
-            </div>
-
-            {progress && (
-              <div className="mt-5 w-full rounded-xl border border-zinc-900 bg-zinc-950/60 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-zinc-600">
-                  Siguiente: {progress.next.label}
-                </p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-900">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400 transition-all"
-                    style={{
-                      width: `${Math.min(100, Math.max(4, (1 - Math.max(progress.pointsNeeded / 0.5, progress.ratingsNeeded > 0 ? 1 : 0)) * 100))}%`,
-                    }}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-zinc-500">
-                  {progress.pointsNeeded > 0 && (
-                    <>
-                      Faltan <span className="text-zinc-300">{progress.pointsNeeded.toFixed(2)}</span> pts
-                    </>
-                  )}
-                  {progress.pointsNeeded > 0 && progress.ratingsNeeded > 0 && " · "}
-                  {progress.ratingsNeeded > 0 && (
-                    <>
-                      y <span className="text-zinc-300">{progress.ratingsNeeded}</span> calif.
-                    </>
-                  )}
-                </p>
-              </div>
-            )}
-          </section>
-
-          <section className="panel rounded-2xl p-5">
-            <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">Qué desbloquea</h2>
-            <ul className="mt-3 space-y-2 text-sm text-zinc-400">
-              {tier.privileges.map((p) => (
-                <li key={p} className="flex gap-2">
-                  <span className="text-zinc-700">—</span>
-                  {p}
-                </li>
-              ))}
-              <li className="flex gap-2">
-                <span className="text-zinc-700">—</span>
-                {tier.dailyCodes} código{tier.dailyCodes === 1 ? "" : "s"} de interacción al día
-              </li>
-            </ul>
-          </section>
-
-          {isMe && (
-            <section className="panel rounded-2xl p-5">
-              <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">
-                Pedir una calificación
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                Genera un código de un solo uso y dáselo a alguien con quien interactuaste.
-              </p>
-              <Link
-                href="/settings"
-                className="mt-3 inline-block rounded-lg bg-white px-4 py-2 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
-              >
-                Generar código
-              </Link>
-            </section>
-          )}
-
-          {!isMe && <ReportForm handle={user.handle} />}
+      {/* ---------------------------------------------------- historial */}
+      <section className="panel p-5">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
+            Últimas calificaciones
+          </h2>
+          <span className="text-xs font-semibold text-[#a49db8]">{ratings.length} en total</span>
         </div>
 
-        {/* ----------------------------------------------- historial */}
-        <section className="panel rounded-2xl p-5">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-600">
-              Calificaciones recibidas
-            </h2>
-            <span className="text-xs text-zinc-600">{ratings.length} en total</span>
-          </div>
-
-          {ratings.length === 0 ? (
-            <p className="mt-6 text-sm text-zinc-600">
-              Sin calificaciones todavía. Un número solo, sin testigos.
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-zinc-900">
-              {ratings.slice(0, 50).map((r) => (
-                <li key={r.id} className="flex items-center justify-between gap-4 py-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-amber-300">{stars(r.stars)}</span>
-                      <span className="text-xs text-zinc-600">
-                        rater {r.raterScore.toFixed(2)}
-                      </span>
-                      {r.reciprocal && (
-                        <span
-                          title="Intercambio mutuo detectado: peso reducido"
-                          className="rounded border border-amber-900/60 bg-amber-950/30 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-amber-500"
-                        >
-                          recip.
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-zinc-600">
-                      alguien · peso {r.weight.toFixed(2)}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-zinc-600">{timeAgo(r.createdAt)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <p className="mt-5 border-t border-zinc-900 pt-4 text-[11px] leading-relaxed text-zinc-600">
-            Las identidades de quienes califican nunca se publican. El peso de cada voto depende del
-            número de esa persona en el momento de calificar.
+        {ratings.length === 0 ? (
+          <p className="mt-5 text-sm text-[#6b6480]">
+            Sin calificaciones todavía. Un número solo, sin testigos.
           </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-[#f3eef6]">
+            {ratings.slice(0, 12).map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm tracking-tight text-[#f2b84b]">{stars(r.stars)}</span>
+                    {r.reciprocal && (
+                      <span
+                        title="Intercambio mutuo detectado: peso reducido"
+                        className="pill bg-[#fbe3a6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#7a5715]"
+                      >
+                        recip.
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs font-semibold text-[#a49db8]">
+                    de alguien con {r.raterScore.toFixed(1)} ★ · {timeAgo(r.createdAt)}
+                  </p>
+                </div>
+
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-extrabold ${
+                    r.delta > 0
+                      ? "bg-[#cdebe0] text-[#2f6b57]"
+                      : r.delta < 0
+                        ? "bg-[#f7d3dd] text-[#8a4552]"
+                        : "bg-[#f3eef6] text-[#a49db8]"
+                  }`}
+                  title="Cuánto movió tu puntaje esta calificación"
+                >
+                  {r.delta > 0 ? "+" : ""}
+                  {r.delta.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="mt-4 border-t border-[#f3eef6] pt-4 text-[11px] leading-relaxed text-[#a49db8]">
+          Quien te califica nunca se publica. El peso de cada voto depende de su número en ese
+          momento, y se recalcula cuando esa persona sube o baja.
+        </p>
+      </section>
+
+      {isMe ? (
+        <section className="panel p-5">
+          <h2 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#a49db8]">
+            Pedir una calificación
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[#6b6480]">
+            Genera un código de un solo uso, muestra el QR y que la otra persona lo apunte con la
+            cámara. Sin ese código, nadie puede calificarte.
+          </p>
+          <Link href="/settings" className="btn-primary mt-3 inline-block px-5 py-2.5 text-sm">
+            Generar código
+          </Link>
         </section>
-      </div>
+      ) : (
+        <div className="px-2 pb-2">
+          <ReportForm handle={user.handle} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div>
+      <div className="score-display text-xl">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#a49db8]">{label}</div>
+      {hint && <div className="mt-0.5 text-[9px] text-[#c3bcd2]">{hint}</div>}
     </div>
   );
 }

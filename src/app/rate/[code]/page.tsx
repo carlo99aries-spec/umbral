@@ -49,30 +49,26 @@ export default async function RatePage({ params }: { params: Promise<{ code: str
   }
 
   return (
-    <div className="mx-auto max-w-md pt-4">
-      <div className="panel rounded-2xl p-6">
-        <div className="flex items-center gap-3 border-b border-zinc-900 pb-5">
+    <div className="pt-2">
+      <div className="panel p-6">
+        <div className="flex items-center gap-3 border-b border-[#f3eef6] pb-4">
           <Avatar name={token.issuer.displayName} hue={token.issuer.avatarHue} size={48} ring />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-zinc-100">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold text-[#3b3550]">
               {token.issuer.displayName}
             </p>
-            <p className="text-xs text-zinc-500">@{token.issuer.handle}</p>
+            <p className="text-xs font-semibold text-[#a49db8]">@{token.issuer.handle}</p>
           </div>
-          {tier && (
-            <div className="ml-auto">
-              <TierBadge name={tier.name} label={tier.label} size="sm" />
-            </div>
-          )}
+          {tier && <TierBadge name={tier.name} label={tier.label} size="sm" />}
         </div>
 
         {token.note && (
-          <p className="mt-4 rounded-lg border border-zinc-900 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-500">
+          <p className="mt-4 rounded-2xl bg-[#faf7fb] px-3 py-2 text-xs font-semibold text-[#6b6480]">
             Contexto: {token.note}
           </p>
         )}
 
-        <div className="mt-6">
+        <div className="mt-5">
           <RateForm code={code} targetName={token.issuer.displayName} />
         </div>
       </div>
@@ -82,14 +78,11 @@ export default async function RatePage({ params }: { params: Promise<{ code: str
 
 function Frame({ title, body }: { title: string; body: string }) {
   return (
-    <div className="mx-auto max-w-md pt-10 text-center">
-      <h1 className="text-xl font-semibold text-zinc-100">{title}</h1>
-      <p className="mt-2 text-sm text-zinc-500">{body}</p>
-      <Link
-        href="/"
-        className="mt-6 inline-block rounded-lg border border-zinc-800 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-600"
-      >
-        Volver al inicio
+    <div className="pt-10 text-center">
+      <h1 className="text-xl font-extrabold text-[#3b3550]">{title}</h1>
+      <p className="mt-2 text-sm text-[#6b6480]">{body}</p>
+      <Link href="/" className="btn-ghost mt-6 inline-block px-5 py-2.5 text-sm">
+        Volver al feed
       </Link>
     </div>
   );

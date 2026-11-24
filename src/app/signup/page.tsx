@@ -9,12 +9,12 @@ export default async function SignupPage() {
   if (user) redirect(`/u/${user.handle}`);
 
   return (
-    <div className="mx-auto max-w-sm pt-6">
-      <h1 className="text-2xl font-bold tracking-tight text-white">Entra al experimento</h1>
-      <p className="mt-2 text-sm text-zinc-500">
-        Empiezas en 3.50. Neutral. El resto lo decide la gente.
+    <div className="pt-4">
+      <h1 className="text-2xl font-extrabold tracking-tight text-[#3b3550]">Entra al experimento</h1>
+      <p className="mt-1 text-sm text-[#6b6480]">
+        Empiezas en 3.5. Neutral. El resto lo decide la gente.
       </p>
-      <div className="panel mt-6 rounded-2xl p-6">
+      <div className="panel mt-5 p-6">
         <SignupForm />
       </div>
     </div>
