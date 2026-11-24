@@ -96,7 +96,7 @@ export function PersonFlow({ baseUrl }: { baseUrl: string }) {
     <div className="flex min-h-[70vh] flex-col gap-4">
       {step === "scan" && (
         <>
-          <h1 className="text-[28px] font-extrabold tracking-tight">aura</h1>
+          <h1 className="text-[28px] font-extrabold tracking-tight">umbral</h1>
 
           <div className="flex gap-1.5 rounded-full bg-white p-1.5">
             <button
