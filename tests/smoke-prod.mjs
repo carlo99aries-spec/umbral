@@ -75,7 +75,14 @@ try {
   await a.page.fill('input[name="displayName"]', "Prod QA Editado");
   await a.page.fill('textarea[name="bio"]', "Bio verificada en producción");
   await a.page.click('button:has-text("Guardar cambios")');
-  check("guardar el perfil confirma el cambio", await a.page.getByText("Perfil actualizado").isVisible());
+  // isVisible() does not wait; the server action settles after the click.
+  let saved = true;
+  try {
+    await a.page.getByText("Perfil actualizado").waitFor({ timeout: 20000 });
+  } catch {
+    saved = false;
+  }
+  check("guardar el perfil confirma el cambio", saved);
 
   await a.page.goto(`${BASE}/u/${A.handle}`, { waitUntil: "domcontentloaded" });
   const editedHtml = await a.page.content();
