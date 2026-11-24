@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Avatar } from "@/components/Avatar";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { BottomNav } from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Umbral — la red de la reputación",
@@ -79,7 +80,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-[560px] px-4 pb-16 pt-4">{children}</main>
+        <main className="mx-auto w-full max-w-[560px] px-4 pb-28 pt-4">{children}</main>
+
+        <BottomNav />
 
         <footer className="mx-auto max-w-[560px] px-4 pb-10">
           <p className="text-center text-[11px] leading-relaxed text-[#a49db8]">

@@ -14,7 +14,7 @@ import {
   verifyPassword,
 } from "./auth";
 import { isReciprocalPair, loadProfile, raterScoreSnapshot } from "./profile";
-import { raterWeight, resolveTier } from "./reputation";
+import { raterWeight, resolveTier, round } from "./reputation";
 
 export type ActionState = { error?: string; success?: string };
 
@@ -267,6 +267,168 @@ export async function createPostAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/");
+}
+
+/** Pull the code out of a pasted link or a bare code. */
+function extractCode(raw: string): string {
+  const trimmed = raw.trim();
+  const match = trimmed.match(/\/rate\/([A-Za-z0-9]+)/);
+  return (match ? match[1] : trimmed).slice(0, 64);
+}
+
+export type TokenPreview =
+  | { ok: true; displayName: string; handle: string; score: number }
+  | { ok: false; error: string };
+
+/** Who is behind a code? Used by the in-person flow before showing stars. */
+export async function previewTokenAction(rawCode: string): Promise<TokenPreview> {
+  const me = await getCurrentUser();
+  if (!me) return { ok: false, error: "Entra a tu cuenta primero" };
+
+  const code = extractCode(rawCode);
+  if (!code) return { ok: false, error: "Escribe un código" };
+
+  const token = await prisma.interactionToken.findUnique({
+    where: { code },
+    include: { issuer: true },
+  });
+
+  if (!token) return { ok: false, error: "Ese código no existe" };
+  if (token.usedAt) return { ok: false, error: "Ese código ya se usó" };
+  if (token.expiresAt.getTime() < Date.now()) return { ok: false, error: "Ese código expiró" };
+  if (token.issuerId === me.id) return { ok: false, error: "Ese código es tuyo" };
+
+  const profile = await loadProfile(token.issuer.handle);
+
+  return {
+    ok: true,
+    displayName: token.issuer.displayName,
+    handle: token.issuer.handle,
+    score: profile?.score.score ?? 3.5,
+  };
+}
+
+/** Issue a code on demand for the in-person flow. Returns the path. */
+export async function quickTokenAction(): Promise<{
+  ok: boolean;
+  code?: string;
+  error?: string;
+}> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Entra a tu cuenta primero" };
+
+  const profile = await loadProfile(user.handle);
+  const tier = profile
+    ? resolveTier(profile.score.score, profile.score.sampleSize)
+    : resolveTier(3.5, 0);
+
+  const since = new Date(Date.now() - 86_400_000);
+  const issuedToday = await prisma.interactionToken.count({
+    where: { issuerId: user.id, createdAt: { gte: since } },
+  });
+
+  if (issuedToday >= tier.dailyCodes) {
+    return { ok: false, error: `Tu nivel permite ${tier.dailyCodes} código(s) al día.` };
+  }
+
+  const code = crypto.randomBytes(5).toString("hex");
+  await prisma.interactionToken.create({
+    data: {
+      code,
+      issuerId: user.id,
+      note: "en persona",
+      expiresAt: new Date(Date.now() + 24 * 3_600_000),
+    },
+  });
+
+  return { ok: true, code: `/rate/${code}` };
+}
+
+export type PersonRatingResult =
+  | {
+      ok: true;
+      displayName: string;
+      handle: string;
+      stars: number;
+      newScore: number;
+      delta: number;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Rate someone through a code, returning the score movement instead of
+ * redirecting, so the flow can show its confirmation step.
+ */
+export async function submitPersonRating(
+  rawCode: string,
+  starsInput: number,
+): Promise<PersonRatingResult> {
+  const me = await getCurrentUser();
+  if (!me) return { ok: false, error: "Entra a tu cuenta primero" };
+
+  const code = extractCode(rawCode);
+  const stars = Math.round(Number(starsInput));
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return { ok: false, error: "Elige de 1 a 5 estrellas" };
+  }
+
+  const token = await prisma.interactionToken.findUnique({
+    where: { code },
+    include: { issuer: true },
+  });
+
+  if (!token) return { ok: false, error: "Ese código no existe" };
+  if (token.usedAt) return { ok: false, error: "Ese código ya se usó" };
+  if (token.expiresAt.getTime() < Date.now()) return { ok: false, error: "Ese código expiró" };
+  if (token.issuerId === me.id) return { ok: false, error: "No puedes calificarte a ti mismo" };
+
+  const recent = await prisma.rating.findFirst({
+    where: {
+      raterId: me.id,
+      subjectId: token.issuerId,
+      createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) },
+    },
+  });
+  if (recent) {
+    return { ok: false, error: "Ya calificaste a esta persona este mes" };
+  }
+
+  const before = (await loadProfile(token.issuer.handle))?.score.score ?? null;
+
+  const reciprocal = await isReciprocalPair(me.id, token.issuerId, stars);
+  const raterScore = await raterScoreSnapshot(me.id);
+
+  await prisma.$transaction([
+    prisma.rating.create({
+      data: {
+        raterId: me.id,
+        subjectId: token.issuerId,
+        stars,
+        note: "calificación en persona",
+        raterScore,
+        weight: raterWeight(raterScore) * (reciprocal ? 0.35 : 1),
+        reciprocal,
+      },
+    }),
+    prisma.interactionToken.update({
+      where: { id: token.id },
+      data: { usedAt: new Date(), usedById: me.id },
+    }),
+  ]);
+
+  const after = (await loadProfile(token.issuer.handle))?.score.score ?? null;
+
+  revalidatePath(`/u/${token.issuer.handle}`);
+  revalidatePath("/alertas");
+
+  return {
+    ok: true,
+    displayName: token.issuer.displayName,
+    handle: token.issuer.handle,
+    stars,
+    newScore: after ?? 0,
+    delta: before !== null && after !== null ? round(after - before, 2) : 0,
+  };
 }
 
 /** Report a profile. Stored, not auto-actioned. */
