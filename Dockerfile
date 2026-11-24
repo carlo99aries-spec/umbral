@@ -30,7 +30,10 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-COPY --from=deps /app/node_modules ./node_modules
+# node_modules comes from the builder, not deps: the Prisma client is generated
+# there against the Postgres schema. Copying from deps ships an uninitialised
+# client that throws "@prisma/client did not initialize yet" at runtime.
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
