@@ -9,7 +9,15 @@ import type { FeedPost } from "@/lib/feed";
  * stars. The stars are content feedback — they never enter the author's
  * reputation number shown in the pill.
  */
-export function PostCard({ post, canRate }: { post: FeedPost; canRate: boolean }) {
+export function PostCard({
+  post,
+  canRate,
+  isAuthor = false,
+}: {
+  post: FeedPost;
+  canRate: boolean;
+  isAuthor?: boolean;
+}) {
   const mine = post.myStars ?? 0;
 
   return (
@@ -88,6 +96,8 @@ export function PostCard({ post, canRate }: { post: FeedPost; canRate: boolean }
               </button>
             ))}
           </form>
+        ) : isAuthor ? (
+          <span className="px-2 text-xs font-semibold text-[#a49db8]">Tu publicación</span>
         ) : (
           <Link href="/login" className="px-2 text-xs font-semibold text-[#a49db8] hover:text-[#3b3550]">
             Entra para calificar

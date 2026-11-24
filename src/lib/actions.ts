@@ -298,6 +298,20 @@ export async function previewTokenAction(rawCode: string): Promise<TokenPreview>
   if (token.expiresAt.getTime() < Date.now()) return { ok: false, error: "Ese código expiró" };
   if (token.issuerId === me.id) return { ok: false, error: "Ese código es tuyo" };
 
+  // Fail here rather than after the stars: being told "no" at the last step
+  // is exactly the kind of small cruelty this app is about, but for a UX bug
+  // it is just bad manners.
+  const recent = await prisma.rating.findFirst({
+    where: {
+      raterId: me.id,
+      subjectId: token.issuerId,
+      createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) },
+    },
+  });
+  if (recent) {
+    return { ok: false, error: "Ya calificaste a esta persona este mes" };
+  }
+
   const profile = await loadProfile(token.issuer.handle);
 
   return {

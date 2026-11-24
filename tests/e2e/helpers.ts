@@ -66,14 +66,29 @@ export async function publishPost(page: Page, caption: string, imageUrl = "") {
 /** Generate an interaction code from /settings and return the path. */
 export async function generateToken(page: Page, note = "qa"): Promise<string> {
   await page.goto("/settings");
+
+  // The settings page already lists previously issued codes, so "a code is
+  // visible" is true before we even click. Snapshot the existing ones and wait
+  // for a genuinely new one instead of racing the list.
+  const before = await page.locator("code", { hasText: "/rate/" }).allTextContents();
+
   await page.fill('input[name="note"]', note);
   await page.click('button:has-text("Generar código")');
 
-  const codeEl = page.locator("code", { hasText: "/rate/" }).first();
-  await expect(codeEl).toBeVisible({ timeout: 30_000 });
-  const text = (await codeEl.textContent()) ?? "";
-  const match = text.match(/\/rate\/([a-z0-9]+)/i);
-  if (!match) throw new Error(`No code found in "${text}"`);
+  let fresh = "";
+  await expect
+    .poll(
+      async () => {
+        const now = await page.locator("code", { hasText: "/rate/" }).allTextContents();
+        fresh = now.find((t) => !before.includes(t)) ?? "";
+        return fresh;
+      },
+      { timeout: 30_000 },
+    )
+    .not.toBe("");
+
+  const match = fresh.match(/\/rate\/([a-z0-9]+)/i);
+  if (!match) throw new Error(`No code found in "${fresh}"`);
   return `/rate/${match[1]}`;
 }
 

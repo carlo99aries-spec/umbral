@@ -54,7 +54,9 @@ test.describe("Generación de QR", () => {
     for (let i = 0; i < 3; i++) {
       await u.page.fill('input[name="note"]', `código ${i}`);
       await u.page.click('button:has-text("Generar código")');
-      await expect(u.page.locator("code", { hasText: "/rate/" })).toHaveCount(i + 1, {
+      // The settings list renders one <li> per issued code; the result panel
+      // above it also contains the link, so count rows, not every <code>.
+      await expect(u.page.locator("li", { hasText: "/rate/" })).toHaveCount(i + 1, {
         timeout: 20_000,
       });
     }

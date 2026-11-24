@@ -101,7 +101,9 @@ test.describe("Feed: publicar y calificar publicaciones", () => {
 
     const card = u.page.locator("article", { hasText: caption });
     await expect(card.getByRole("button", { name: /estrellas/ })).toHaveCount(0);
+    // The author is logged in, so the anonymous prompt would be a lie.
     await expect(card.getByText("Entra para calificar")).toHaveCount(0);
+    await expect(card.getByText("Tu publicación")).toBeVisible();
 
     await u.close();
   });

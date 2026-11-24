@@ -59,7 +59,12 @@ export default async function FeedPage() {
         </section>
       ) : (
         posts.map((post) => (
-          <PostCard key={post.id} post={post} canRate={Boolean(me) && me!.id !== post.author.id} />
+          <PostCard
+            key={post.id}
+            post={post}
+            canRate={Boolean(me) && me!.id !== post.author.id}
+            isAuthor={Boolean(me) && me!.id === post.author.id}
+          />
         ))
       )}
     </div>
