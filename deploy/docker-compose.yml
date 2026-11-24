@@ -67,7 +67,8 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      DOMAIN: ${DOMAIN:?DOMAIN is required for the tls profile}
+      # Only used by the optional tls profile. Set DOMAIN in .env to enable it.
+      DOMAIN: ${DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL:-}
     volumes:
       - ../deploy/Caddyfile:/etc/caddy/Caddyfile:ro
