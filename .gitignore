@@ -36,3 +36,6 @@ coverage/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# local build logs
+build.log
