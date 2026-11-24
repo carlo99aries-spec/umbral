@@ -1,0 +1,100 @@
+// Umbral — data model
+// SQLite for local dev. To run on Postgres, change `provider` below to
+// "postgresql" and update DATABASE_URL. No enums are used so the same schema
+// works on both engines.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  handle       String   @unique
+  displayName  String
+  email        String   @unique
+  passwordHash String
+  bio          String   @default("")
+  avatarHue    Int      @default(210)
+  isAdmin      Boolean  @default(false)
+  suspended    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  givenRatings    Rating[]           @relation("GivenRatings")
+  receivedRatings Rating[]           @relation("ReceivedRatings")
+  sessions        Session[]
+  tokensIssued    InteractionToken[] @relation("TokensIssued")
+  tokensUsed      InteractionToken[] @relation("TokensUsed")
+  reportsFiled    Report[]           @relation("ReportsFiled")
+  reportsAgainst  Report[]           @relation("ReportsAgainst")
+
+  @@index([handle])
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  userAgent String   @default("")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  raterId   String
+  subjectId String
+  stars     Int
+  note      String   @default("")
+  // Snapshot of the rater's own score at the moment of rating.
+  // This is what makes influence asymmetric.
+  raterScore Float
+  // Precomputed multiplier applied to this rating (rater weight x reciprocity).
+  weight     Float
+  reciprocal Boolean @default(false)
+  createdAt  DateTime @default(now())
+
+  rater   User @relation("GivenRatings", fields: [raterId], references: [id], onDelete: Cascade)
+  subject User @relation("ReceivedRatings", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId, createdAt])
+  @@index([raterId, subjectId, createdAt])
+}
+
+model InteractionToken {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  issuerId  String
+  note      String    @default("")
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  usedById  String?
+
+  issuer User  @relation("TokensIssued", fields: [issuerId], references: [id], onDelete: Cascade)
+  usedBy User? @relation("TokensUsed", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@index([issuerId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  subjectId  String
+  reason     String
+  details    String   @default("")
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  reporter User @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  subject  User @relation("ReportsAgainst", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+}
