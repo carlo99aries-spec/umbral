@@ -1,14 +1,35 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Avatar } from "@/components/Avatar";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
   title: "Umbral — la red social de la reputación",
   description:
     "Cada interacción termina en una calificación. Tu promedio ponderado decide a dónde puedes entrar. Proyecto open source inspirado en «Caída en picado».",
+  applicationName: "Umbral",
+  appleWebApp: {
+    capable: true,
+    title: "Umbral",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
+  openGraph: {
+    title: "Umbral — red de reputación",
+    description: "Todos te califican. Siempre.",
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#08080b",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  maximumScale: 5,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="es">
       <body className="min-h-screen text-zinc-200">
+        <ServiceWorker />
         <header className="sticky top-0 z-50 border-b border-zinc-900/80 bg-[#08080b]/85 backdrop-blur-md">
           <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
             <Link href="/" className="group flex items-center gap-2">
