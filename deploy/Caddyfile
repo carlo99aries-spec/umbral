@@ -15,5 +15,5 @@
 		-Server
 	}
 
-	reverse_proxy app:3000
+	reverse_proxy umbral-app:3000
 }

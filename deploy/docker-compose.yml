@@ -1,10 +1,12 @@
 # Umbral — Docker Compose
 #
-#   docker compose up -d --build          # db + app, bound to 127.0.0.1:APP_PORT
-#   docker compose --profile tls up -d    # adds Caddy on 80/443 (only if free)
+#   docker compose up -d --build          # db + app (app bound to 127.0.0.1:APP_PORT)
+#   docker compose --profile tls up -d    # adds a Caddy on 80/443 (only if free)
 #
-# The app is published on loopback only. Put it behind whatever reverse proxy
-# already owns port 443 on the host (see deploy/README.md).
+# If the host already has a reverse proxy owning 80/443 (the usual case on a
+# shared VPS), do NOT use the tls profile. Instead let the app join that
+# proxy's Docker network via UMBRAL_EDGE_NETWORK and point the proxy at
+# `umbral-app:3000`.
 
 services:
   db:
@@ -24,10 +26,11 @@ services:
     networks:
       - umbral
 
-  app:
+  umbral-app:
     build:
       context: ..
       dockerfile: Dockerfile
+    container_name: umbral-app
     restart: unless-stopped
     depends_on:
       db:
@@ -50,6 +53,8 @@ services:
       start_period: 45s
     networks:
       - umbral
+      # Joined so an existing edge proxy can reach `umbral-app:3000` by name.
+      - edge
 
   # Optional. Only start this if ports 80/443 are free on the host.
   caddy:
@@ -57,7 +62,7 @@ services:
     profiles: ["tls"]
     restart: unless-stopped
     depends_on:
-      - app
+      - umbral-app
     ports:
       - "80:80"
       - "443:443"
@@ -78,3 +83,6 @@ volumes:
 
 networks:
   umbral:
+  edge:
+    external: true
+    name: ${UMBRAL_EDGE_NETWORK:-vps_app}
