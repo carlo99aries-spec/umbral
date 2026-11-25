@@ -147,6 +147,8 @@ export interface RatingInput {
   createdAt: Date;
   /** True when this rating was part of a detected reciprocal pair. */
   reciprocal?: boolean;
+  /** ID of the collusion cluster this rating belongs to. */
+  clusterId?: string;
 }
 
 export interface ScoreResult {
@@ -166,6 +168,7 @@ export interface ScoreResult {
     weight: number;
     decay: number;
     reciprocal: boolean;
+    clusterId?: string;
     contribution: number;
   }>;
 }
@@ -194,7 +197,8 @@ export function computeScore(ratings: RatingInput[], now: Date = new Date()): Sc
 
     if (decay <= 0) continue;
 
-    const w = raterWeight(rs) * decay * (rating.reciprocal ? cfg.reciprocityPenalty : 1);
+    const penalty = (rating.reciprocal || rating.clusterId) ? cfg.reciprocityPenalty : 1;
+    const w = raterWeight(rs) * decay * penalty;
     const contribution = w * stars;
 
     weightedSum += contribution;
@@ -207,6 +211,7 @@ export function computeScore(ratings: RatingInput[], now: Date = new Date()): Sc
       weight: round(w, 4),
       decay: round(decay, 4),
       reciprocal: Boolean(rating.reciprocal),
+      clusterId: rating.clusterId,
       contribution: round(contribution, 4),
     });
   }
@@ -348,4 +353,108 @@ export function clamp(n: number, min: number, max: number): number {
 export function round(n: number, digits: number): number {
   const f = Math.pow(10, digits);
   return Math.round(n * f) / f;
+}
+
+
+/**
+ * Detect collusion clusters (rings and farms) among all ratings.
+ *
+ * Builds a directed graph of rater -> subject for ratings >= 4.5.
+ * Finds Strongly Connected Components (SCCs).
+ * If an SCC (size >= 3) has an internal edge share > 0.8, it's flagged as a cluster.
+ * Returns a map of ratingId -> clusterId.
+ */
+export function detectClusters(
+  ratings: Array<{ id: string; raterId: string; subjectId: string; stars: number }>
+): Map<string, string> {
+  const nodes = new Set<string>();
+  const adj = new Map<string, string[]>();
+  const outDegree = new Map<string, number>();
+  const ratingMap = new Map<string, Array<{id: string, to: string}>>();
+
+  for (const r of ratings) {
+    if (r.stars < 4.5) continue;
+    nodes.add(r.raterId);
+    nodes.add(r.subjectId);
+    
+    if (!adj.has(r.raterId)) adj.set(r.raterId, []);
+    adj.get(r.raterId)!.push(r.subjectId);
+    
+    outDegree.set(r.raterId, (outDegree.get(r.raterId) || 0) + 1);
+    
+    if (!ratingMap.has(r.raterId)) ratingMap.set(r.raterId, []);
+    ratingMap.get(r.raterId)!.push({ id: r.id, to: r.subjectId });
+  }
+
+  let index = 0;
+  const indices = new Map<string, number>();
+  const lowlink = new Map<string, number>();
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  const sccs: string[][] = [];
+
+  function strongconnect(v: string) {
+    indices.set(v, index);
+    lowlink.set(v, index);
+    index++;
+    stack.push(v);
+    onStack.add(v);
+
+    for (const w of (adj.get(v) || [])) {
+      if (!indices.has(w)) {
+        strongconnect(w);
+        lowlink.set(v, Math.min(lowlink.get(v)!, lowlink.get(w)!));
+      } else if (onStack.has(w)) {
+        lowlink.set(v, Math.min(lowlink.get(v)!, indices.get(w)!));
+      }
+    }
+
+    if (lowlink.get(v) === indices.get(v)) {
+      const scc: string[] = [];
+      let w: string;
+      do {
+        w = stack.pop()!;
+        onStack.delete(w);
+        scc.push(w);
+      } while (w !== v);
+      sccs.push(scc);
+    }
+  }
+
+  for (const v of nodes) {
+    if (!indices.has(v)) {
+      strongconnect(v);
+    }
+  }
+
+  const flagged = new Map<string, string>();
+
+  for (let i = 0; i < sccs.length; i++) {
+    const scc = sccs[i];
+    if (scc.length < 3) continue;
+
+    const sccSet = new Set(scc);
+    let internalEdges = 0;
+    let totalOutEdges = 0;
+
+    for (const u of scc) {
+      totalOutEdges += (outDegree.get(u) || 0);
+      for (const v of (adj.get(u) || [])) {
+        if (sccSet.has(v)) internalEdges++;
+      }
+    }
+
+    if (totalOutEdges > 0 && (internalEdges / totalOutEdges) > 0.8) {
+      const clusterId = `cluster-${i}`;
+      for (const u of scc) {
+        for (const edge of (ratingMap.get(u) || [])) {
+          if (sccSet.has(edge.to)) {
+            flagged.set(edge.id, clusterId);
+          }
+        }
+      }
+    }
+  }
+
+  return flagged;
 }
