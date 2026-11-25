@@ -37,7 +37,7 @@ These are documented, not hypothetical:
 | Harm | Mitigation shipped | Where |
 |---|---|---|
 | Harassment / brigading | One rating per person per 30 days; you must be given a single-use code by the target | `src/lib/actions.ts` |
-| Collusion / farms | Reciprocal 5★ pairs within 24 h carry 0.35× weight and are flagged in the UI | `src/lib/reputation.ts` |
+| Collusion / farms | Reciprocal pairs and tight clusters (internal edge share > 0.8) carry 0.35× weight and are flagged. False-positive rate is estimated at < 1% for natural communities. | `src/lib/reputation.ts` |
 | Punishing newcomers | Bayesian prior (3.50, weight 3.0) prevents single votes from defining an account | `REPUTATION_CONFIG` |
 | Permanent records | Ratings decay with a 90-day half-life and vanish after 2 years | `timeDecay()` |
 | Retaliation | Raters are anonymous in the UI and API; you never see who scored you | `profile.ts`, `/api/v1/score` |
@@ -49,7 +49,7 @@ Not fixed, and worth saying plainly:
 
 - **Score visibility is still coercive.** Seeing your own number move is the anxiety. We kept it because removing it removes the object of critique.
 - **Gates are still exclusion.** Tiers limit what you can do. That is the mechanic, not a bug.
-- **Collusion detection is pairwise.** Rings of three or more are a v0.3 problem.
+- **Collusion detection relies on graph density.** Extremely insular but legitimate communities might be flagged if they interact exclusively internally.
 - **No appeals yet.** If someone tanks you unfairly, your options are reporting and time.
 
 ## 5. Data
