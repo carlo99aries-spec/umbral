@@ -166,3 +166,22 @@ Umbral es una red social experimental de reputación ponderada: cada interacció
 Es software libre, crítico de sí mismo y auditable. El motor de reputación vive en `src/lib/reputation.ts`, tiene 28 pruebas y no cambia sin un commit público.
 
 Rama principal: `main`. Issues abiertos para cualquiera que quiera construir la alternativa.
+
+## Deploy
+
+For public instances, Umbral should be deployed using PostgreSQL. A `docker-compose.yml` is provided for easy orchestration.
+
+### Requirements
+- Docker and Docker Compose
+- A reverse proxy (e.g., Nginx, Traefik, or Caddy) for **TLS termination**. As per `SECURITY.md`, Umbral requires HTTPS in production to securely handle session cookies and prevent MITM attacks.
+
+### Quick Start
+1. Copy the environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+2. Start the services:
+   ```bash
+   docker-compose up -d
+   ```
+3. The app will be available at `http://localhost:3000`. Ensure you place it behind a TLS-enabled reverse proxy before exposing it to the public internet.
